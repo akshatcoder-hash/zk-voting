@@ -1,28 +1,24 @@
 use anchor_lang::prelude::*;
-use crate::state::{DaoState, Proposal};
+use crate::zk::elgamal::ElGamalCiphertext;
 
-pub fn handler(ctx: Context<CreateProposal>, description: String) -> Result<()> {
-    let dao_state = &mut ctx.accounts.dao_state;
-    let proposal = &mut ctx.accounts.proposal;
-
-    proposal.id = dao_state.proposal_count;
-    proposal.description = description;
-    proposal.yes_votes = 0;
-    proposal.no_votes = 0;
-    proposal.is_active = true;
-
-    dao_state.proposal_count += 1;
-
-    Ok(())
+#[account]
+pub struct DaoState {
+    pub authority: Pubkey,
+    pub proposal_count: u64,
+    pub public_key: u64,
+    pub private_key: u64,
 }
 
-#[derive(Accounts)]
-pub struct CreateProposal<'info> {
-    #[account(mut)]
-    pub dao_state: Account<'info, DaoState>,
-    #[account(init, payer = authority, space = 8 + 8 + 200 + 8 + 8 + 1)]
-    pub proposal: Account<'info, Proposal>,
-    #[account(mut)]
-    pub authority: Signer<'info>,
-    pub system_program: Program<'info, System>,
+#[account]
+pub struct Proposal {
+    pub id: u64,
+    pub description: String,
+    pub encrypted_votes: Vec<ElGamalCiphertext>,
+    pub is_active: bool,
+}
+
+#[account]
+pub struct UserState {
+    pub has_voted: bool,
+    pub reward_points: u64,
 }

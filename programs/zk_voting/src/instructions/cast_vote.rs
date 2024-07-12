@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use crate::state::{Proposal, UserState};
+use crate::state::{Proposal, UserState, DaoState};
 use crate::zk::elgamal::{ElGamalPubkey, ElGamalCiphertext};
 use crate::zk::proofs::VoteProof;
 use crate::errors::ErrorCode;
@@ -13,7 +13,7 @@ pub fn handler(ctx: Context<CastVote>, proposal_id: u64, encrypted_vote: ElGamal
 
     // Verify the vote proof
     let dao_pubkey = ElGamalPubkey {
-        g: 5, // This should be stored in the DAO state in a real implementation
+        g: 5,
         h: ctx.accounts.dao_state.public_key,
     };
     require!(
