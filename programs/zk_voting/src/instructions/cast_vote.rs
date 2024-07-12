@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use crate::state::{Proposal, UserState};
+use crate::errors::ErrorCode;
 
 pub fn handler(ctx: Context<CastVote>, proposal_id: u64, vote: bool) -> Result<()> {
     let proposal = &mut ctx.accounts.proposal;

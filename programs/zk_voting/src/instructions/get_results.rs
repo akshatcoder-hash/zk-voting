@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use crate::state::Proposal;
+use crate::errors::ErrorCode;
 
 pub fn handler(ctx: Context<GetResults>, proposal_id: u64) -> Result<()> {
     let proposal = &ctx.accounts.proposal;
