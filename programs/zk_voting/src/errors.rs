@@ -8,4 +8,6 @@ pub enum ErrorCode {
     AlreadyVoted,
     #[msg("Invalid proposal ID")]
     InvalidProposal,
+    #[msg("Invalid vote proof")]
+    InvalidVoteProof,
 }
