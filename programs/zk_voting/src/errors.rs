@@ -10,4 +10,8 @@ pub enum ErrorCode {
     InvalidProposal,
     #[msg("Invalid vote proof")]
     InvalidVoteProof,
+    #[msg("Unauthorized access")]
+    Unauthorized,
+    #[msg("Invalid private key")]
+    InvalidPrivateKey,
 }
