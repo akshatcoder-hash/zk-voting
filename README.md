@@ -1,6 +1,6 @@
 # ZK Voting System
 
-A privacy-preserving voting system built on Solana using zero-knowledge proofs.
+A privacy-preserving voting system built on Solana using zero-knowledge proofs. The program is deployed on Solana Devnet with the program id: `EoUv2UHa4y25Vm3opdDZGyfMbgEZ5DF7PaUTdHB2PLrM`
 
 ## Table of Contents
 - [Features](#features)
