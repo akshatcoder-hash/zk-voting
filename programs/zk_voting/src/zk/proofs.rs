@@ -1,43 +1,68 @@
 use super::elgamal::{ElGamalPubkey, ElGamalCiphertext};
 use anchor_lang::prelude::*;
-use rand::Rng;
+use curve25519_dalek::ristretto::{RistrettoPoint, CompressedRistretto};
+use curve25519_dalek::scalar::Scalar;
+use curve25519_dalek::traits::Identity;
+use merlin::Transcript;
+use rand::rngs::OsRng;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
 pub struct VoteProof {
-    pub c: u64,
-    pub r: u64,
+    pub a1: [u8; 32],
+    pub a2: [u8; 32],
+    pub z1: [u8; 32],
+    pub z2: [u8; 32],
 }
 
-pub fn generate_vote_proof(vote: bool, random: u64, public_key: &ElGamalPubkey) -> VoteProof {
-    let mut rng = rand::thread_rng();
-    let w = rng.gen_range(1..100);
-    let a1 = modpow(public_key.g, w, 101);
-    let a2 = modpow(public_key.h, w, 101);
+pub fn generate_vote_proof(vote: bool, r: Scalar, public_key: &ElGamalPubkey) -> VoteProof {
+    let g = RistrettoPoint::default();
+    let y = CompressedRistretto::from_slice(&public_key.point).unwrap().decompress().unwrap();
     
-    let e = rng.gen_range(1..100);
-    let c = e;
-    let r = (w - (if vote { 1 } else { 0 }) * random * c) % 100;
+    let v = if vote { Scalar::ONE } else { Scalar::ZERO };
     
-    VoteProof { c, r }
+    let w1 = Scalar::random(&mut OsRng);
+    let w2 = Scalar::random(&mut OsRng);
+    
+    let a1 = &g * &w1;
+    let a2 = (&y * &w1) + (&g * &w2);
+    
+    let mut transcript = Transcript::new(b"vote_proof");
+    transcript.append_message(b"a1", a1.compress().as_bytes());
+    transcript.append_message(b"a2", a2.compress().as_bytes());
+    
+    let mut challenge_bytes = [0u8; 64];
+    transcript.challenge_bytes(b"challenge", &mut challenge_bytes);
+    let c = Scalar::from_bytes_mod_order_wide(&challenge_bytes);
+    
+    let z1 = w1 + (c * r);
+    let z2 = w2 + (c * v);
+    
+    VoteProof {
+        a1: a1.compress().to_bytes(),
+        a2: a2.compress().to_bytes(),
+        z1: z1.to_bytes(),
+        z2: z2.to_bytes(),
+    }
 }
 
 pub fn verify_vote_proof(proof: &VoteProof, ciphertext: &ElGamalCiphertext, public_key: &ElGamalPubkey) -> bool {
-    let t1 = (modpow(public_key.g, proof.r, 101) * modpow(ciphertext.c1, proof.c, 101)) % 101;
-    let t2 = (modpow(public_key.h, proof.r, 101) * modpow(ciphertext.c2, proof.c, 101)) % 101;
+    let g = RistrettoPoint::default();
+    let y = CompressedRistretto::from_slice(&public_key.point).unwrap().decompress().unwrap();
+    let c1 = CompressedRistretto::from_slice(&ciphertext.c1).unwrap().decompress().unwrap();
+    let c2 = CompressedRistretto::from_slice(&ciphertext.c2).unwrap().decompress().unwrap();
     
-    t1 == modpow(public_key.g, proof.r, 101) && (t2 == modpow(public_key.h, proof.r, 101) || t2 == (modpow(public_key.h, proof.r, 101) * public_key.h) % 101)
-}
-
-fn modpow(base: u64, exponent: u64, modulus: u64) -> u64 {
-    let mut result = 1;
-    let mut base = base % modulus;
-    let mut exponent = exponent;
-    while exponent > 0 {
-        if exponent % 2 == 1 {
-            result = (result * base) % modulus;
-        }
-        exponent = exponent >> 1;
-        base = (base * base) % modulus;
-    }
-    result
+    let a1 = CompressedRistretto::from_slice(&proof.a1).unwrap().decompress().unwrap();
+    let a2 = CompressedRistretto::from_slice(&proof.a2).unwrap().decompress().unwrap();
+    let z1 = Scalar::from_canonical_bytes(proof.z1).unwrap();
+    let z2 = Scalar::from_canonical_bytes(proof.z2).unwrap();
+    
+    let mut transcript = Transcript::new(b"vote_proof");
+    transcript.append_message(b"a1", &proof.a1);
+    transcript.append_message(b"a2", &proof.a2);
+    
+    let mut challenge_bytes = [0u8; 64];
+    transcript.challenge_bytes(b"challenge", &mut challenge_bytes);
+    let c = Scalar::from_bytes_mod_order_wide(&challenge_bytes);
+    
+    (&g * &z1 == a1 + (&c1 * &c)) && ((&y * &z1) + (&g * &z2) == a2 + (&c2 * &c))
 }
