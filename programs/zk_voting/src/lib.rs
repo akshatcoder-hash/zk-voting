@@ -6,7 +6,7 @@ pub mod zk;
 
 use state::{DaoState, Proposal, UserState};
 
-declare_id!("ABTDuP27AJX7ZDcSFcqcEYt86aC9M19EjQ4vDn6KLcZw");
+declare_id!("EoUv2UHa4y25Vm3opdDZGyfMbgEZ5DF7PaUTdHB2PLrM");
 
 #[program]
 pub mod zk_voting {
