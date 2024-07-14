@@ -32,7 +32,7 @@ Before you begin, ensure you have met the following requirements:
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/zk-voting.git
+   git clone https://github.com/akshatcoder-hash/zk-voting.git
    cd zk-voting
    ```
 
